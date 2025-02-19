@@ -4,7 +4,7 @@ version = "0.5.3"
 edition.workspace = true
 license.workspace = true
 description.workspace = true
-repository.workspace  = true
+repository.workspace = true
 authors.workspace = true
 readme = "../README.md"
 
@@ -28,15 +28,21 @@ rayon = "1.8.1"
 # Image Processing
 image = "0.25.1"
 
-# Natural Language Processing
-tokenizers = {version="0.21.0", features=["http"]}
-text-splitter = {version="0.23.0", features=["tokenizers"]}
+# # Natural Language Processing
+# tokenizers = { version = "0.21.0", features = ["http"] }
+tokenizers = { git = "https://github.com/BenLocal/tokenizers.git", branch = "api-from-env", features = [
+    "http",
+] }
+# text-splitter = { version = "0.23.0", features = ["tokenizers"] }
+text-splitter = { git = "https://github.com/BenLocal/text-splitter.git", branch = "fix-tokenizers", features = [
+    "tokenizers",
+] }
 
 tracing = "0.1.37"
 
 
 # Hugging Face Libraries
-hf-hub = "0.3.2"
+hf-hub = "0.4.1"
 candle-nn = { workspace = true }
 candle-transformers = { workspace = true }
 candle-core = { workspace = true }
@@ -66,14 +72,14 @@ byteorder = "1.5.0"
 
 futures = "0.3.30"
 
-pdf-extract = {workspace = true}
+pdf-extract = { workspace = true }
 docx-parser = "0.1.1"
 docx-rust = "=0.1.8"
 ndarray = "0.16.1"
-ndarray-linalg = {version = "0.16.0"}
+ndarray-linalg = { version = "0.16.0" }
 pdf2image = "0.1.2"
-strum = {workspace = true}
-strum_macros = {workspace = true}
+strum = { workspace = true }
+strum_macros = { workspace = true }
 base64 = "0.22.1"
 # Optional Dependency
 intel-mkl-src = { version = "0.8.1", optional = true }
@@ -91,17 +97,32 @@ lazy_static = "1.4.0"
 clap = { version = "4.5.20", features = ["derive"] }
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-ort = {version = "=2.0.0-rc.9", features = ["load-dynamic"], optional = true}
+ort = { version = "=2.0.0-rc.9", features = ["load-dynamic"], optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-ort = {version = "=2.0.0-rc.9", optional = true}
+ort = { version = "=2.0.0-rc.9", optional = true }
 
 
 [features]
 default = []
-mkl = ["dep:intel-mkl-src", "candle-nn/mkl", "candle-transformers/mkl", "candle-core/mkl"]
-accelerate = ["dep:accelerate-src", "candle-core/accelerate", "candle-nn/accelerate", "candle-transformers/accelerate"]
-cuda = ["candle-core/cuda", "candle-nn/cuda", "candle-transformers/cuda", "ort/cuda"]
+mkl = [
+    "dep:intel-mkl-src",
+    "candle-nn/mkl",
+    "candle-transformers/mkl",
+    "candle-core/mkl",
+]
+accelerate = [
+    "dep:accelerate-src",
+    "candle-core/accelerate",
+    "candle-nn/accelerate",
+    "candle-transformers/accelerate",
+]
+cuda = [
+    "candle-core/cuda",
+    "candle-nn/cuda",
+    "candle-transformers/cuda",
+    "ort/cuda",
+]
 cudnn = ["candle-core/cudnn"]
 flash-attn = ["cuda", "candle-transformers/flash-attn", "dep:candle-flash-attn"]
 metal = ["candle-core/metal", "candle-nn/metal"]

@@ -37,7 +37,7 @@ impl Default for ClipEmbedder {
 
 impl ClipEmbedder {
     pub fn new(model_id: String, revision: Option<&str>, token: Option<&str>) -> Result<Self, E> {
-        let api = hf_hub::api::sync::ApiBuilder::new()
+        let api = hf_hub::api::sync::ApiBuilder::from_env()
             .with_token(token.map(|s| s.to_string()))
             .build()?;
 
@@ -289,10 +289,7 @@ mod tests {
     #[test]
     fn test_tokenize_sequences() {
         let clip_embedder = ClipEmbedder::default();
-        let sequences = &[
-            "Hey there how are you?",
-            "EmbedAnything is the best!",
-        ];
+        let sequences = &["Hey there how are you?", "EmbedAnything is the best!"];
         let (input_ids, vec_seq) = clip_embedder
             .tokenize_sequences(Some(sequences), &clip_embedder.tokenizer)
             .unwrap();

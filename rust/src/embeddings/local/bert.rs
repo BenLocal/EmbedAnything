@@ -76,7 +76,7 @@ impl BertEmbedder {
         };
 
         let (config_filename, tokenizer_filename, weights_filename) = {
-            let api = ApiBuilder::new()
+            let api = ApiBuilder::from_env()
                 .with_token(token.map(|s| s.to_string()))
                 .build()
                 .unwrap();
@@ -192,7 +192,7 @@ pub struct SparseBertEmbedder {
 impl SparseBertEmbedder {
     pub fn new(model_id: String, revision: Option<String>, token: Option<&str>) -> Result<Self, E> {
         let (config_filename, tokenizer_filename, weights_filename) = {
-            let api = ApiBuilder::new()
+            let api = ApiBuilder::from_env()
                 .with_token(token.map(|s| s.to_string()))
                 .build()
                 .unwrap();
