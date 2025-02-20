@@ -3,13 +3,11 @@ use super::pooling::{ModelOutput, PooledOutputType, Pooling};
 use super::text_embedding::ONNXModel;
 use crate::embeddings::embed::EmbeddingResult;
 use crate::embeddings::local::text_embedding::models_map;
-use crate::embeddings::utils::{
- get_type_ids_ndarray, tokenize_batch_ndarray,
-};
+use crate::embeddings::utils::{get_type_ids_ndarray, tokenize_batch_ndarray};
 
 use crate::Dtype;
 use anyhow::Error as E;
-use hf_hub::api::sync::Api;
+use hf_hub::api::sync::{Api, ApiBuilder};
 use hf_hub::Repo;
 use ndarray::prelude::*;
 use ort::execution_providers::{CUDAExecutionProvider, CoreMLExecutionProvider, ExecutionProvider};
@@ -63,7 +61,7 @@ impl OrtBertEmbedder {
         };
 
         let (_, tokenizer_filename, weights_filename, tokenizer_config_filename) = {
-            let api = Api::new().unwrap();
+            let api = ApiBuilder::from_env().build().unwrap();
             let api = match revision {
                 Some(rev) => api.repo(Repo::with_revision(
                     hf_model_id.to_string(),
@@ -153,8 +151,8 @@ impl OrtBertEmbedder {
                 CoreMLExecutionProvider::default().build(),
             ])?
             .with_optimization_level(GraphOptimizationLevel::Level3)?
-            .with_intra_threads(optimal_threads)?  // Use optimal thread count
-            .with_inter_threads(1)?  // Set inter-op parallelism to 1 when using GPU
+            .with_intra_threads(optimal_threads)? // Use optimal thread count
+            .with_inter_threads(1)? // Set inter-op parallelism to 1 when using GPU
             .commit_from_file(weights_filename)?;
 
         Ok(OrtBertEmbedder {
@@ -172,9 +170,14 @@ impl BertEmbed for OrtBertEmbedder {
         batch_size: Option<usize>,
     ) -> Result<Vec<EmbeddingResult>, E> {
         let batch_size = batch_size.unwrap_or(32);
-        
+
         // Pre-compute input names once
-        let input_names: Vec<_> = self.model.inputs.iter().map(|input| input.name.as_str()).collect();
+        let input_names: Vec<_> = self
+            .model
+            .inputs
+            .iter()
+            .map(|input| input.name.as_str())
+            .collect();
         let output_name = self.model.outputs.first().unwrap().name.as_str();
         let needs_token_type = input_names.iter().any(|&x| x == "token_type_ids");
 
@@ -182,8 +185,9 @@ impl BertEmbed for OrtBertEmbedder {
             .par_chunks(batch_size)
             .flat_map(|mini_text_batch| -> Result<Vec<Vec<f32>>, E> {
                 // Tokenize and prepare inputs
-                let (input_ids, attention_mask) = tokenize_batch_ndarray(&self.tokenizer, mini_text_batch)?;
-                
+                let (input_ids, attention_mask) =
+                    tokenize_batch_ndarray(&self.tokenizer, mini_text_batch)?;
+
                 // Build inputs more efficiently
                 let inputs = if needs_token_type {
                     let token_type_ids = Array2::<i64>::zeros(input_ids.raw_dim());
@@ -334,8 +338,8 @@ impl OrtSparseBertEmbedder {
                 CoreMLExecutionProvider::default().build(),
             ])?
             .with_optimization_level(GraphOptimizationLevel::Level3)?
-            .with_intra_threads(optimal_threads)?  // Use optimal thread count
-            .with_inter_threads(1)?  // Set inter-op parallelism to 1 when using GPU
+            .with_intra_threads(optimal_threads)? // Use optimal thread count
+            .with_inter_threads(1)? // Set inter-op parallelism to 1 when using GPU
             .commit_from_file(weights_filename)?;
 
         Ok(OrtSparseBertEmbedder { tokenizer, model })
@@ -371,7 +375,6 @@ impl BertEmbed for OrtSparseBertEmbedder {
             .collect())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
